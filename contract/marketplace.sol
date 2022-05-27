@@ -29,21 +29,14 @@ contract AmbuMarketPlace {
         string image;
         string location;
         uint price;
-        uint rating;
         uint services;
-            
-    }
-
-    struct Rating {
-        address payable sender;
-        uint rate;
-        uint numberOfRate;
-        uint average;
+        uint avgRating;
+        uint numOfRaters;
+        uint totalRating;
     }
 
     mapping (uint => Hospital) internal hospitals;
-    mapping (uint => Rating) internal ratings;
-
+    mapping(uint => mapping(address => bool)) hasBought;
 
 // write each hospital as a struct into our map
     function writeHospital(
@@ -52,18 +45,21 @@ contract AmbuMarketPlace {
         string memory _location,
         uint _price
     ) public {
-        uint _rating = 0;
-        uint _services = 0;
+        uint valueZero = 0;
         hospitals[hospitalsLength] = Hospital(
             payable(msg.sender),
 			_name,
 			_image,
 			_location,
-			_price,
-			_rating,
-			_services
+            _price,
+            valueZero,
+            valueZero,
+            valueZero,
+            valueZero
         );
 
+        //Setting the hasBought for the user to be true
+        hasBought[hospitalsLength][msg.sender] = true;
         hospitalsLength++;
     }
 
@@ -75,6 +71,7 @@ contract AmbuMarketPlace {
 		string memory, 
 		uint, 
 		uint,
+        uint,
 		uint
 	) {
 		return (
@@ -83,7 +80,8 @@ contract AmbuMarketPlace {
 			hospitals[_index].image, 
 			hospitals[_index].location, 
 			hospitals[_index].price,
-			hospitals[_index].rating,
+			hospitals[_index].avgRating,
+			hospitals[_index].numOfRaters,
 			hospitals[_index].services
 		);
 	}
@@ -108,31 +106,11 @@ contract AmbuMarketPlace {
 
 // write rating for each hospital
     function writeRating(uint _index, uint _selectedRate) public {
-        uint _rate = 0;
-        uint _numberOfRate = 0;
-        uint _average = 0;
-
-        ratings[_index] = Rating (
-            payable(msg.sender),
-            _rate,
-            _numberOfRate,
-            _average
-        );
-
-        ratings[_index].rate += _selectedRate;
-        ratings[_index].numberOfRate++;
-        ratings[_index].average = ratings[_index].rate/ratings[_index].numberOfRate;
-        hospitals[_index].rating = ratings[_index].average;
-
+        require(hasBought[_index][msg.sender] == true, "You need to buy the service to rate the service");
+        hospitals[_index].totalRating += _selectedRate;
+        hospitals[_index].numOfRaters++;
+        hospitals[_index].avgRating = hospitals[_index].totalRating / hospitals[_index].numOfRaters;
     }
-
-// returns rating for each hospital
-    function readRating(uint _index) public view returns (uint) {
-
-		return (
-			hospitals[_index].rating
-			);
-	}
 
 }
 
